@@ -8,63 +8,52 @@ using System.Windows;
 using System.Windows.Controls;
 using System.ComponentModel;
 
-namespace Homework_11
+namespace Homework_12_ver_1
 {
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        Organization Organization; //Объявляем экземпляр класса Организации
+        #region Свойства класса
+        internal Organization Organization;  //Объявляем экземпляр класса Организации
 
-        ObservableCollection<Worker> ListOfWorkers; //Объявляем коллекцию сотрудников (используется для отображения в DataGrid)
+        /// <summary>
+        /// Статичный экземпляр MainWindow для доступа из других окон
+        /// </summary>
+        public static MainWindow winReference { get; private set; }
 
+        /// <summary>
+        /// Коллекция-словарь с переводом типов классов-наследников
+        /// </summary>
+        internal Dictionary<string, string> TypePairs = new Dictionary<string, string>
+        {
+            {"Intern", "Студент" },
+            {"Workman", "Штатный сотрудник" },
+            {"Manager", "Руководитель департамента"},
+            {"TopManager", "Высший менеджмент" }
+        };
+
+        List<Worker> ListOfWorkers; //Объявляем коллекцию сотрудников (используется для отображения в DataGrid)
+        #endregion
         public MainWindow()
         {
             InitializeComponent();
-            ListOfWorkers = new ObservableCollection<Worker>(); //Инициализируем коллекцию сотрудников
+            winReference = this; //ссылка на MainWindow для доступа из других окон
+            ListOfWorkers = new List<Worker>(); //Инициализируем коллекцию сотрудников
             this.Closing += MainWindow_Closed; //Метод, вызываемый при закрытии программы пользователем
         }
 
-        #region Методы создания TreeView и DataGrid и обработчики событий
+        #region Методы и события Xaml создания экземпляров TreeViewItem и ListView
         /// <summary>
         /// Основной метод создания элементов TreeView и DataGrid
         /// </summary>
         /// <param name="Organization"></param>
-        private void CreateTreeView(Organization Organization)
+        internal void CreateTreeView(Organization Organization)
         {
-            Tree.Items.Add(CreateFirstTreeItem(Organization)); //добавляем первый (основной) элемент - экземпляр организации
+            Tree.Items.Clear();
+            Tree.Items.Add(TreeService.CreateTreeItem(Organization));
             WorkersList.ItemsSource = ListOfWorkers; //указываем коллекцию источник для DataGrid
-        }
-
-        /// <summary>
-        /// Создание первого элемента TreeViewItem
-        /// </summary>
-        /// <param name="ItOrganization">Экземпляр Organization, помещаемый в элемент TreeViewItem</param>
-        /// <returns>Элемент TreeViewItem</returns>
-        private TreeViewItem CreateFirstTreeItem(Organization ItOrganization)
-        {
-            TreeViewItem item = new TreeViewItem(); //объявляем и инициализируем экземпляр TreeViewItem
-            item.Header = ItOrganization.Name; //Пишем наименование организации в заголовок
-            item.Tag = ItOrganization; //Вкладываем экземпляр Organization в TreeViewItem
-            item.Items.Add("Loading...");//добавляем в элемент TreeViewItem вложенный элемент типа string. На него будем ориентироваться
-            //при событии раскрытия данного элемента TreeViewItem
-            return item; //Возвращаем элемент TreeViewItem
-        }
-
-        /// <summary>
-        /// Создания элемента TreeViewItem
-        /// </summary>
-        /// <param name="ItDepartment">Экземпляр департамента, помещаемый в элемент TreeViewItem</param>
-        /// <returns>Элемент TreeViewItem</returns>
-        public TreeViewItem CreateTreeItem(Department ItDepartment)
-        {
-            TreeViewItem item = new TreeViewItem(); //объявляем и инициализируем экземпляр TreeViewItem
-            item.Header = ItDepartment.Name; //Пишем имя департамента в заголовок
-            item.Tag = ItDepartment; //Вкладываем экземпляр Department в TreeViewItem
-            item.Items.Add("Loading..."); //добавляем в элемент TreeViewItem вложенный элемент типа string. На него будем ориентироваться
-            //при событии раскрытия данного элемента TreeViewItem
-            return item; //Возвращаем элемент TreeViewItem
         }
 
         /// <summary>
@@ -75,40 +64,7 @@ namespace Homework_11
         private void Tree_Expanded(object sender, RoutedEventArgs e)
         {
             TreeViewItem item = e.Source as TreeViewItem; //раскрываемый элемент TreeView
-            ///Если в возвращенном событием элементе TreeView лежит объект Department и в него вложена одна текстовая переменная Loading...
-            if (item.Tag is Department && item.Tag is Department && item.Items.Count == 1 && item.Items[0] is string)
-            {
-                item.Items.Clear(); //очищаем вложенный элементы (Loading...)
-                for (int i = 0; i < (item.Tag as Department).SlaveDepartmentId.Count; i++) //в цикле перебираем Id подчиненных департаментов
-                                                                                           //экземпляра Department
-                {
-                    for (int j = 0; j < Organization.Departmets.Count; j++) //в цикле перебираем коллекцию экземпляров Department в Organization
-                    {
-                        //если находим подчиненный департамент
-                        if ((item.Tag as Department).SlaveDepartmentId[i] == Organization.Departmets[j].Id)
-                        {
-                            //то добавляем его к "раскрытому" элементу TreeView
-                            item.Items.Add(CreateTreeItem(Organization.Departmets[j]));
-                        }
-                    }
-                }
-            }
-            ///здесь все аналогично, только "раскрываемый" элемент TreeView - организация. Используется при раскрытии первого элемента TreeView
-            if (item.Tag is Organization && item.Items.Count == 1 && item.Items[0] is string)
-            {
-                item.Items.Clear();
-                for (int i = 0; i < (item.Tag as Organization).SlaveDepartmentId.Count; i++)
-                {
-                    for (int j = 0; j < Organization.Departmets.Count; j++)
-                    {
-                        if ((item.Tag as Organization).SlaveDepartmentId[i] == Organization.Departmets[j].Id)
-                        {
-                            item.Items.Add(CreateTreeItem(Organization.Departmets[j]));
-                        }
-                    }
-                }
-            }
-
+            TreeService.CreateSubItems(item, Organization); //обращаемся к статичному методу для создания подчиненных элементов TreeViewItem
         }
 
         /// <summary>
@@ -119,30 +75,11 @@ namespace Homework_11
         private void Tree_Selected(object sender, RoutedEventArgs e)
         {
             TreeViewItem item = e.Source as TreeViewItem; //переданный объект инициализируем и объявляем как экземпляр TreeViewItem
-            int Id; //текущий Id сотрудника
-            ListOfWorkers.Clear(); //очищаем коллекцию работников, отображаемую в DataGrid
-            if (item.Tag is Department) //если вложенный в экземпляр TreeViewItem объект является экземпляром Department
-            {
-                Department ItDepartment = item.Tag as Department; //вложенный объект инициализируем и объявляем как экземпляр Department
-                Id = ItDepartment.ChiefId; //текущему Id сотрудника присваиваем Id начальника департамента
-                var Manager = Organization.Workers.Where(x => x.Id == Id); //передаем из коллекции работников экземпляр Руководителя
-                ListOfWorkers.Add(Manager.ToList()[0]); //добавляем его в коллекцию, отображаемую в DataGrid
-                for (int i = 0; i < ItDepartment.DepartmentEmployeesId.Count; i++) //далее в цикле аналогично добавляем всех сотрудников департамента
-                {
-                    Id = ItDepartment.DepartmentEmployeesId[i];
-                    var Work = Organization.Workers.Where(x => x.Id == Id);
-                    ListOfWorkers.Add(Work.ToList()[0]); //костыль немного, но как то так. Зато вручную не перебирать, кинул в Linq и усе...
-                }
-            }
-            ////если вложенный в экземпляр TreeViewItem объект является экземпляром Organization
-            if (item.Tag is Organization)
-            {
-                //тогда в коллекцию сотрудников добавляем директора
-                Organization ItOrganization = item.Tag as Organization;
-                Id = ItOrganization.DirectorId;
-                var Director = Organization.Workers.Where(x => x.Id == Id);
-                ListOfWorkers.Add(Director.ToList()[0]);
-            }
+            List<Worker> NewListOfWorkers = TreeService.CreateWorkersCollection(item, Organization); //c помощью статичного метода заменяем текущую коллекцию ListOfWorkers
+            ListOfWorkers.Clear();                                                                         //сотрудниками выбранного в TreeView департамента/организации
+            ListOfWorkers.AddRange(NewListOfWorkers);
+            WorkersList.Items.Refresh(); //обновляем отображение работников в MainWindow
+
         }
         #endregion
 
@@ -150,14 +87,13 @@ namespace Homework_11
         /// <summary>
         /// Событие выбора элемента меню "Открыть"
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void MenuItem_Open(object sender, RoutedEventArgs e)
         {
             ListOfWorkers.Clear(); //очищаем коллекцию работников, отображаемых в DataGrid
             Tree.Items.Clear(); //очищаем TreeView
             Organization = Organization.LoadFromJson(@"base.json"); //загружаем организацию с json
             CreateTreeView(Organization); //добавляем элементы загруженной организации в TreeView
+            WorkersList.Items.Refresh(); //обновляем отображение работников в MainWindow
             MessageBox.Show("Файл base.json загружен успешно!", this.Title, MessageBoxButton.OK, MessageBoxImage.Information);
             //сообщение, что загрузка прошла успешно.
         }
@@ -165,8 +101,6 @@ namespace Homework_11
         /// <summary>
         /// Событие выбора элемента меню "Сохранить"
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void MenuItem_Save(object sender, RoutedEventArgs e)
         {
             Organization.SaveToJson(Organization, @"base.json"); //сохраняем текущую организацию в json
@@ -176,25 +110,164 @@ namespace Homework_11
         /// <summary>
         /// Событие выбора элемента меню "Демонстрация"
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void MenuItem_Random(object sender, RoutedEventArgs e)
         {
             ListOfWorkers.Clear(); //очищаем коллекцию работников, отображаемых в DataGrid
             Tree.Items.Clear(); //очищаем TreeView
             Organization = new Organization("ООО 'Лесной завод совы'"); //инициализируем новый экземпляр организации с помощью конструктора
             CreateTreeView(Organization); //добавляем элементы загруженной организации в TreeView
+            WorkersList.Items.Refresh(); //обновляем отображение работников в MainWindow
             MessageBox.Show("Демонстрационная организация создана успешно!", this.Title, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>
         /// Событие выбора элемента меню "Выход"
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void MenuItem_Exit(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        /// <summary>
+        /// Событие выбора элемента меню "Добавить департамент"
+        /// </summary>
+        private void MenuItem_Click_AddDepartment(object sender, RoutedEventArgs e)
+        {
+            if (Organization != null) //если экзепляр организации не null
+            {
+                AddDepartment addDepartment = new AddDepartment(); //создаем экземпляр окна
+                addDepartment.Owner = this; //назначаем владельцем нового окна MainWindow
+                addDepartment.Show(); //отображаем окно
+            }
+            else { MessageBox_Message("Сначала загрузите организацию", "Организация не найдена"); }
+        }
+
+        /// <summary>
+        /// Событие выбора элемента меню "Добавить работника"
+        /// </summary>
+        private void MenuItem_Click_AddWorker(object sender, RoutedEventArgs e)
+        {
+            if (Organization != null)
+            {
+                AddWorker addWorker = new AddWorker(); //создаем экземпляр окна AddWorker
+                addWorker.Owner = this; //назначаем владельцем нового окна MainWindow
+                addWorker.Show(); //Выводи окно на экран
+            }
+            else { MessageBox_Message("Сначала загрузите организацию", "Организация не найдена"); }
+        }
+        #endregion
+
+        #region Методы обработки событий ContextMenu в TreeView и ListView
+        /// <summary>
+        /// Удаление выбранного работника
+        /// </summary>
+        private void DeleteWorkerBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (WorkersList.SelectedItem != null) //проверка, что работник выбран
+            {
+                Worker worker = WorkersList.SelectedItem as Worker; //приведение к типу
+                Organization.DeleteWorker(worker); //удаление
+                ListOfWorkers.Remove(worker); //удаление из текущей отображаемой коллекции
+                WorkersList.Items.Refresh();
+            }
+            else { MessageBox_Message("Работник не выбран", "Ошибка!"); }
+        }
+
+        /// <summary>
+        /// Изменение выбранного работника
+        /// </summary>
+        private void EditWorkerBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (WorkersList.SelectedItem != null) //проверка, что работник выбран
+            {
+                EditWorker editWorker = new EditWorker(); //создаем экземпляр окна редактирования работника
+                editWorker.Owner = this;
+                editWorker.Show();
+            }
+            else { MessageBox_Message("Работник не выбран", "Ошибка!"); }
+        }
+
+        /// <summary>
+        /// Удаление выбранного департамента
+        /// </summary>
+        private void DeleteDepartmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (Tree.SelectedItem != null && (Tree.SelectedItem as TreeViewItem).Tag is Department) //проверка, что департамент выбран
+            {
+                Organization.Delete_Department((Tree.SelectedItem as TreeViewItem).Tag as Department); //приведение к типу и вызов метода удаления
+                CreateTreeView(Organization); //заново инициализируем TreeView
+            }
+            else { MessageBox_Message("Департамент не выбран", "Ошибка!"); }
+        }
+
+        /// <summary>
+        /// Изменение выбранного департамента
+        /// </summary>
+        private void EditDepartmentBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (Tree.SelectedItem != null) //проверка, что департамент выбран
+            {
+                EditDepartment editDepartment = new EditDepartment(); //создаем экземпляр окна для редактирования департамента
+                editDepartment.Owner = this;
+                editDepartment.Show();
+            }
+            else { MessageBox_Message("Департамент не выбран", "Ошибка!"); }
+        }
+        #endregion
+
+        #region Методы обработки событий кнопок "Все сотрудники" и "Нераспределенные"
+        /// <summary>
+        /// Метод обработки события кнопки "Все сотрудники"
+        /// </summary>
+        private void Button_Click_ShowAll(object sender, RoutedEventArgs e)
+        {
+            if (Organization != null && Organization.Workers != null && Organization.Workers.Count != 0)
+            {
+                ListOfWorkers.Clear(); //очищаем текущую отображаемую коллекцию сотрудников
+                ListOfWorkers.AddRange(Organization.Workers); //добавляем в нее всех сотрудников организации
+                WorkersList.Items.Refresh(); //обновляем эелемент Xaml
+            }
+        }
+
+        /// <summary>
+        /// Метод обработки события "Нераспределенные"
+        /// </summary>
+        private void Button_Click_ShowHomeless(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Clear(); //очищаем текущую отображаемую коллекцию сотрудников
+            if (Organization != null && Organization.UnallocatedWorkersId.Count != 0 && Organization.UnallocatedWorkersId != null)
+            {
+                ListOfWorkers = TreeService.CreateUnallocatedWorkersCollection(Organization); //создаем коллекцию с помощью сервиса
+                WorkersList.ItemsSource = ListOfWorkers;
+            }
+            WorkersList.Items.Refresh(); //обновляем
+        }
+        #endregion
+
+        #region Вспомогательные методы
+        /// <summary>
+        /// Метод обновления коллекции сотрудников для отображения в WorkersList
+        /// </summary>
+        internal void RefreshWorkersList()
+        {
+            if (Tree.SelectedItem != null)
+            {
+                List<Worker> NewListOfWorkers = TreeService.CreateWorkersCollection(Tree.SelectedItem as TreeViewItem, Organization);
+                //c помощью статичного метода заменяем текущую коллекцию ListOfWorkers сотрудниками выбранного в TreeView департамента/организации
+                ListOfWorkers.Clear();
+                ListOfWorkers.AddRange(NewListOfWorkers);
+                WorkersList.Items.Refresh(); //обновляем отображение работников в MainWindow
+            }
+        }
+
+        /// <summary>
+        /// Метод вызова MessageBox для отображения информационных сообщений
+        /// </summary>
+        /// <param name="Text">Текст сообщения</param>
+        /// <param name="Caption">Заголовок сообщения</param>
+        public void MessageBox_Message(string Text, string Caption)
+        {
+            MessageBox.Show(Text, Caption, MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         /// <summary>
@@ -224,5 +297,72 @@ namespace Homework_11
             }
         }
         #endregion
+
+        #region Сортировка списка сотрудников по нажатию на заголовок
+        private void GridViewColumnHeader_ClickId(object sender, RoutedEventArgs e)
+        {   //сортируем по возрастанию/убыванию при помощи IComparer
+            ListOfWorkers.Sort(
+                (SorterFlags.IdFlag ? Worker.SortedBy(SortedCriterion.Id) : Worker.SortedBy(SortedCriterion.IdDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickName(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+                (SorterFlags.NameFlag ? Worker.SortedBy(SortedCriterion.Name) : Worker.SortedBy(SortedCriterion.NameDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickSurname(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+                (SorterFlags.SurnameFlag ? Worker.SortedBy(SortedCriterion.Surname) : Worker.SortedBy(SortedCriterion.SurnameDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickAge(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+               (SorterFlags.AgeFlag ? Worker.SortedBy(SortedCriterion.Age) : Worker.SortedBy(SortedCriterion.AgeDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickPosition(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+               (SorterFlags.PositionFlag ? Worker.SortedBy(SortedCriterion.Position) : Worker.SortedBy(SortedCriterion.PositionDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickSalary(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+               (SorterFlags.SalaryFlag ? Worker.SortedBy(SortedCriterion.Salary) : Worker.SortedBy(SortedCriterion.SalaryDescending)));
+            WorkersList.Items.Refresh();
+        }
+
+        private void GridViewColumnHeader_ClickProjects(object sender, RoutedEventArgs e)
+        {
+            ListOfWorkers.Sort(
+               (SorterFlags.ProjectsDescending ? Worker.SortedBy(SortedCriterion.Projects) : Worker.SortedBy(SortedCriterion.ProjectsDescending)));
+            WorkersList.Items.Refresh();
+        }
+        #endregion
+
+
+
+        
+
+       
+
+        
+
+        
+
+
+
+        
+
+
     }
 }

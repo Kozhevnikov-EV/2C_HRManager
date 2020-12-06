@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{737FAA89-A3C1-4803-8E1F-490C3FDA070B}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Homework_11</RootNamespace>
-    <AssemblyName>Homework_11</AssemblyName>
+    <RootNamespace>Homework_12_ver_1</RootNamespace>
+    <AssemblyName>Homework_12_ver_1</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -58,13 +58,45 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Department.cs" />
-    <Compile Include="Intern.cs" />
-    <Compile Include="Manager.cs" />
-    <Compile Include="TopManager.cs" />
-    <Compile Include="Workman.cs" />
-    <Compile Include="Worker.cs" />
-    <Compile Include="Organization.cs" />
+    <Compile Include="AddDepartment.xaml.cs">
+      <DependentUpon>AddDepartment.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AddWorker.xaml.cs">
+      <DependentUpon>AddWorker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditDepartment.xaml.cs">
+      <DependentUpon>EditDepartment.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EditWorker.xaml.cs">
+      <DependentUpon>EditWorker.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Models\Department.cs" />
+    <Compile Include="Models\Intern.cs" />
+    <Compile Include="Models\Manager.cs" />
+    <Compile Include="Models\Organization.cs" />
+    <Compile Include="Models\TopManager.cs" />
+    <Compile Include="Models\Worker.cs" />
+    <Compile Include="Models\Workman.cs" />
+    <Compile Include="Services\RandomService.cs" />
+    <Compile Include="Services\SalaryService.cs" />
+    <Compile Include="Services\SorterFlags.cs" />
+    <Compile Include="Services\TreeService.cs" />
+    <Page Include="AddDepartment.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AddWorker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditDepartment.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EditWorker.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -104,9 +136,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
